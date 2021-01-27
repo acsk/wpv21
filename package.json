@@ -1,0 +1,28 @@
+{
+  "name": "webapp.dom",
+  "version": "1.0.0",
+  "description": "automação de browser para execução de scripts js.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon ./bin/server.js"
+  },
+  "author": "JMSoft",
+  "license": "ISC",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.0.20",
+    "body-parser": "^1.19.0",
+    "debug": "^4.1.1",
+    "express": "^4.17.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "http": "0.0.0",
+    "image-to-base64": "^2.1.1",
+    "pdf-to-base64": "^1.0.2",
+    "request": "^2.88.2",
+    "socket.io": "^2.3.0",
+    "sulla": "^2.3.14",
+    "venom-bot": "^2.2.3"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  }
+}

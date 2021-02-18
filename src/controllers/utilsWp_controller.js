@@ -16,47 +16,63 @@ exports.formatReceivedFile = async function(instancia, requisicao){
 
        /* retornar o objcto da mensagem usando CHatID (id do chat - conversa) */
        var message = {};
-
-       /* filtrar chat */
-       var chat =  await instancia.loadAndGetAllMessagesInChat(requisicao.number,true);
-
-       for(var i = 0; i < chat.length; i++){
-            
-            /* verificar id da message */
-            if(chat[i].id == requisicao.MsgId){
-              //console.log(chat[i]);
-              message = chat[i];
-              break;
-            }
-
-       }
-
-       if(message){
-          nameFile = requisicao.MsgId  + '-' + now.getSeconds() + "." +  mime.extension(message.mimetype);
-       }else{
-         return {"retorno":"erro conversasão não identificada!"};
-       }
-
-       var buffer = await instancia.downloadFile(message);             
+console.log("pegando mensagens do chat");
               
-      console.log(message);
+    
     return new Promise( async (resolve, reject) => {
+
+
+            /* filtrar chat */
+       var chats;
+       
+       await instancia.loadAndGetAllMessagesInChat(requisicao.number,true).then(async function(res){
+
+              chats = res;
+
+              for(var i = 0; i < chats.length; i++){
+             
+                /* verificar id da message */
+                if(chats[i].id == requisicao.MsgId){
+                  //console.log(chat[i]);
+                  message = chats[i];
+                  break;
+                }
+    
+           }
+
+       });
+
+   //    console.log(chats);
+       
+      //  console.log(message)
+      var ext = mime.extension(message.mimetype);
+
+        if(message){
+           nameFile = requisicao.MsgId  + '-' + now.getSeconds() + "." +  ext;
+        }else{
+          return {"retorno":"erro conversasão não identificada!"};
+        }
+ 
+        var buffer = await instancia.decryptFile(message);       
+        console.log("Extenção do arquivo a ser tratado: ",ext);
+        //console.log("Base64 do arquivo:",buffer);
                 /* =============== alterar conteudo de arquivo recebido (DIRETORIO, OU BASE64) ================ */
                             /* verificar as configurações para API  PARA DOWNLOAD DE ARQUIVO RECEBIDO */
         if(confApi.files.return_patch_files == true){
                                 /* ==== ATENÇÃO ======= PARA DOCS precisa aplicar descriptografar arquivo */
             
                 /* se for audio */
-               if(message.type = "ptt"){
+               if(ext == "ogg" || ext == "oga" || ext == "mp3" || ext == "wav"){
                 
                  tipo = "audio";
                  base_dir = "/../../public/files/wapi/download/" + tipo + "/" + nameFile;
                  fileName = __dirname + base_dir;
-
-                 /* criar o arquivo .ogg */
+                
+                 /* criar o arquivo .ogg */                 
                  await fs.writeFileSync(fileName, buffer, function (err){
                      ret = err;
                      console.log(err);
+                     return;
                  });
 
                  if(!ret){
@@ -64,18 +80,7 @@ exports.formatReceivedFile = async function(instancia, requisicao){
                     console.log(message.directPath);
                 }
 
-                 /* converter criado para mp3 */
-              //  var b64 = await fs.readFileSync(fileName,'base64');
-                 /* mudar extenção na string dir do arquivo .ogg para .mp3 */
-               // var dirFinal = fileName.substr(0, fileName.lastIndexOf('.'));
-              //  var DirMp3 = dirFinal + '.mp3';
-               //  console.log(dirFinal);
-                /* criar arquivo .mp3 */
-               /*  await fs.writeFileSync(DirMp3, 'data:audio/mp3;base64,' + b64, function (err){
-                     ret = err;
-                     console.log(err);
-                 }); */
-
+              
                  /* se for documento */
                }else if(message.type = "document"){
 
@@ -86,7 +91,14 @@ exports.formatReceivedFile = async function(instancia, requisicao){
                  await fs.writeFileSync(fileName, buffer, function (err){
                      ret = err;
                      console.log(err);
+                     return;
                  });
+
+                 
+                 if(!ret){
+                    message.directPath = "/files/wapi/download/" + tipo + "/" + nameFile;
+                    console.log(message.directPath);
+                }
               
 
                }else{
@@ -98,7 +110,14 @@ exports.formatReceivedFile = async function(instancia, requisicao){
                  await fs.writeFileSync(fileName, buffer, function (err){
                      ret = err;
                      console.log(err);
+                     return;
                  });
+
+                 
+                 if(!ret){
+                      message.directPath = "/files/wapi/download/" + tipo + "/" + nameFile;
+                      console.log(message.directPath);
+                  }
              }
 
                 /* se houver erro retornar */
@@ -109,8 +128,7 @@ exports.formatReceivedFile = async function(instancia, requisicao){
 
                }
 
-               /* se o formato for docx ou doc */
-               var ext = mime.extension(message.mimetype);
+             
                if(ext == 'docx' || ext == 'doc' || typeof message.directPath == undefined){
                    /* neste caso irá criar o indice (body) */
                    message.directPath = "/files/wapi/download/" + tipo + "/" + nameFile;

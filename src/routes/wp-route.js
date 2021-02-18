@@ -15,6 +15,7 @@ const { response } = require('../app');
 /* variaveis globais */
 var qrcode;
 var instancias = []; /* {'name':'vendas','instancia':client} */
+var instStatus = []; /* retornar status das instancias na rota */
 var notificacoes = [];
 /* config drive chromium */
 /* config timeout in line: 76 arquive: wapi_srv20\node_modules\wapi_srv\dist\controllers\browser.js */
@@ -112,10 +113,35 @@ async function setup_instancia(instancia,session_rem){
             
 
          
-        },(statusFind) => { 
-          
-            console.log(statusFind); 
-        
+        }, (statusSession, session_venom) => {
+
+          /* TRATAR STATUS DA SESSÕES */
+
+              console.log('- Status da sessão:', statusSession);
+              //return isLogged || notLogged || browserClose || qrReadSuccess || qrReadFail || autocloseCalled || desconnectedMobile || deleteToken
+              //Create session wss return "serverClose" case server for close
+              console.log('- Session name: ', session_venom);
+
+              instancias.forEach( async function(item){
+
+                    if(item.name == session_venom){
+
+
+                          if (statusSession == 'isLogged' || statusSession == 'inChat') {
+                              item.status = "CONNECTED";
+                          } else if (statusSession == 'qrReadSuccess') {
+                              item.status = "CONNECTED";
+                          } else if (statusSession == 'qrReadFail' || statusSession == 'notLogged') {
+                              item.status = "STARTING";
+                          }else{
+                            item.status = statusSession;
+                          }
+
+                    }
+
+              });
+             
+
         },configs).then(async function(client){
 
 
@@ -518,7 +544,8 @@ exports.FormatMessageFiles = async function(req,res){
                     var msgFormated = {};  
                       
                       var retorno = await utils.formatReceivedFile(inst,requisicao).catch( await function(res){
-                          console.log(res)
+                          
+                          console.log("Resultado do retorno de processamento de arquivo do chat: ",res)
                           return res.retorno;
 
                       });
@@ -873,51 +900,18 @@ exports.getQrcode = async function(req,res){
 exports.get_instancias = async function(req,res){
   var requisicao = req.body;
   var insts = [];
-  var status = "";
+  var status = "em análise...";
   var consulta = {};
   var proms;
 
- proms = new Promise( function(resolve, reject){
-    insts = [];
-    instancias.forEach( async function(item){
+      instancias.forEach( async function(item){       
 
-        consulta = await verify_instance(item.name);
-     
-      if(consulta.flag_exist == true){
+            insts.push({'nome':item.name, 'status':item.status}); 
 
-        var inst = consulta.instancia;
-        
-        // Is connected
-        if(inst){
-          status = await inst.isConnected();
-        }
+      });
+   
+      res.status(200).send({'retorno':insts});
 
-        if(item.name){
-
-           /* inserir item ao arrayObject instancias para retorno */
-          insts.push({'nome':item.name, 'status':status});  
-
-        }
-       
-      }
-
-      
-
-  });
-
-  //console.log(insts);
-    resolve(insts);
-
-})
-
-proms.then((rs) => { 
-
-  //console.log(rs);
-  res.status(200).send({'retorno':insts})
-
-});
-
- 
 }
 
 /* pegar status */

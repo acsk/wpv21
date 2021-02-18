@@ -110,9 +110,13 @@ exports.formatFilesSend = async function(params){
                                                    
                                                     return res;
                                             });
-                                                
+                                           /*  var b64 =  fs.readFileSync(dirFile,{encoding:'base64'});
+                                            var b64_ = "data:audio/"+ ext +";base64," + b64.toString();
+                                            
                                             /* fazer envio de mensagem com arquivo */
-                                            result = await params.sessao.sendFile(params.number,dirDest, fileName, params.msg); 
+                                           /* result = await params.sessao.sendPtt(params.number,b64_, fileName, params.msg); */
+
+                                           result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
                                         
                                             resolve({"retorno":result});
                                             return;

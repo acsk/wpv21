@@ -36,7 +36,7 @@ app.post('/wp/sendMsg', wp.sendMensagem);
 app.post('/wp/newMsg', wp.newMsg);
 app.post('/wp/SendMedia', wp.sendMsgMedia);
 app.post('/wp/qrcode', wp.getQrcode);
-app.get('/wp/get_instancias', wp.get_instancias);
+app.post('/wp/get_instancias', wp.get_instancias);
 app.post('/wp/status', wp.getStatus);
 app.post('/wp/set_OnAgora',wp.set_OnAgora);
 app.post('/wp/check_number',wp.check_number);

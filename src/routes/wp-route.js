@@ -1,5 +1,5 @@
 
-var wapi_srv = require('wppconnect');
+var wapi_srv = require('@wppconnect-team/wppconnect');
 const fs = require('fs');
 var mime = require('mime-types');
 var confApi = require('../../config/api');
@@ -29,7 +29,7 @@ var configs = {
   logQR: true, // Logs QR automatically in terminal
   browserArgs: confApi.browser, // Parameters to be added into the chrome browser instance
   refreshQR: 12000, // Will refresh QR every 15 seconds, 0 will load QR once. Default is 30 seconds
-  autoClose: 120000, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
+  autoClose: 0, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
   disableSpins: true, // Will disable Spinnies animation, useful for containers (docker) for a better log
   disableWelcome: true, // Will disable the welcoming message which appears in the beginning
 }
@@ -76,10 +76,10 @@ async function setup_instancia(instancia,session_rem){
           }
        
          // fs.rmdirSync(path, { recursive: true });
-         wapi_srv.create(instancia, (base64Qr, asciiQR) => {      
+         wapi_srv.create(instancia, (base64Qr, asciiQR, attempts, urlCode) => {      
            
 
-            qrcode = exportQR(base64Qr, '');            
+            qrcode = base64Qr; //exportQR(base64Qr, '');            
            
            // console.log(qrcode);
          
@@ -695,6 +695,50 @@ exports.newMsg = async function(req,res){
   }
 
   res.status(200).send({'instancia':requisicao.instancia,'hook':hook,'status':status});  
+
+}
+
+/* getProfilePic */
+exports.getProfilePic = async function(req, res){
+
+    var requisicao = req.body;
+    var status = "Inexistente";
+    var consulta = await verify_instance(requisicao.instancia);
+
+    
+  //console.log(consulta);
+  if(consulta.flag_exist == true){
+
+    var inst = consulta.instancia;
+    var urlPic = {}
+  
+    // Is connected
+    if(inst){      
+
+
+        status = await inst.isConnected();
+
+        try{
+          await inst.getProfilePicFromId(requisicao.number).then(function(res){
+
+              console.log(res);
+
+              urlPic = res;
+
+              res.status(200).send({'instancia':requisicao.instancia,'img':urlPic,'status':status}); 
+              return;
+
+          });   
+        } catch (error) {
+          urlPic = "erro ao gerar link";
+        }    
+       // console.log(hook);
+    }
+    
+
+  }
+
+  res.status(200).send({'instancia':requisicao.instancia,'img':urlPic,'status':status}); 
 
 }
 

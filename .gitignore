@@ -1,7 +1,7 @@
 !node_modules/
 node_modules/*
-!node_modules/venom-bot/
-node_modules/venom-bot/node_modules/
+!node_modules/wppconnect/
+node_modules/wppconnect/node_modules/
 !docs/
 BACKUPS-APP/
 tmp/

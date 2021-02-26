@@ -1,5 +1,5 @@
 
-var wapi_srv = require('venom-bot');
+var wapi_srv = require('wppconnect');
 const fs = require('fs');
 var mime = require('mime-types');
 var confApi = require('../../config/api');
@@ -206,37 +206,36 @@ async function setup_instancia(instancia,session_rem){
                         
                         // console.log("Nova Mensagem armazenada!" + message.body);
                          /* verificar se a mensagem é um arquivo */
-                        
-                        
-
-                         if(item.webhook.type !== "chat"){
-                         // console.log(message);
-                            /* =============== alterar conteudo de arquivo recebido (DIRETORIO, OU BASE64) ================ */
-                            /* verificar as configurações para API  PARA DOWNLOAD DE ARQUIVO RECEBIDO */  
-                            var msgFormated = {};  
-                                                  
-                               await utils.formatReceivedFile(client,message).catch( await function(res){
-
-                                  msgFormated = res.retorno;
-
-                              });
-
-                              if(msgFormated){
-
-                                item.webhook = msgFormated;
-
-                              }else{
-
-                                item.webhook = message;
-
-                              }
-
-
-                          }
-
+                         
 
                            /* apos formatar o formato do retorno do arquivo (arquivo ou base64) então enviar post de notificação ao sistema client */
                           if(confApi.send_post_php.active == true){
+
+
+                             if(item.webhook.type !== "chat"){
+                              // console.log(message);
+                                 /* =============== alterar conteudo de arquivo recebido (DIRETORIO, OU BASE64) ================ */
+                                 /* verificar as configurações para API  PARA DOWNLOAD DE ARQUIVO RECEBIDO */  
+                                 var msgFormated = {};  
+                                                       
+                                    await utils.formatReceivedFile(client,message).catch( await function(res){
+     
+                                       msgFormated = res.retorno;
+     
+                                   });
+     
+                                   if(msgFormated){
+     
+                                     item.webhook = msgFormated;
+     
+                                   }else{
+     
+                                     item.webhook = message;
+     
+                                   }
+     
+     
+                               }
                             
                               console.log("✅ Enviando o post para o sistema cliente...");
                               

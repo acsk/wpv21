@@ -2,6 +2,7 @@
 /* converter url para base64 */
 const imageToBase64 = require('image-to-base64');
 const fs = require('fs');
+var getStat = require('util').promisify(fs.stat);
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffmpeg = require('fluent-ffmpeg');
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -56,6 +57,7 @@ exports.formatFilesSend = async function(params){
                         if(confApi.files.send_patch_files == true){
 
                                 if(ext == 'pdf' || ext == 'doc' || ext == 'docx' || ext == 'txt' || ext == 'rtf'){
+                                    
 
                                             fileName = "DOCUMENTO_"+ params.number + "_" + now.getSeconds() + "." + ext;
                                             dirFile = './public/files/wapi/download/documento/' + fileName; 
@@ -116,7 +118,21 @@ exports.formatFilesSend = async function(params){
                                             /* fazer envio de mensagem com arquivo */
                                            /* result = await params.sessao.sendPtt(params.number,b64_, fileName, params.msg); */
 
-                                           result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
+                                           /* pegar informações do arquivo se for menor igual a 2MB, enviar como gravação se não como arquivo .mp3 */
+                                           var infoFile = await getStat(dirFile);
+                                            console.log(infoFile);
+                                            if(infoFile.size <= 2097152) /* menor igual 2MB */
+                                            {
+
+                                                result = await params.sessao.sendPtt(params.number,dirFile, fileName, params.msg); 
+
+                                            }else{
+
+                                                result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
+
+                                            }
+
+                                            
                                         
                                             resolve({"retorno":result});
                                             return;

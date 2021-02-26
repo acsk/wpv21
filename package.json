@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
+    "@wppconnect-team/wppconnect": "https://github.com/wppconnect-team/wppconnect/releases/download/nightly/wppconnect-nightly.tgz",
     "body-parser": "^1.19.0",
     "debug": "^4.1.1",
     "express": "^4.17.1",

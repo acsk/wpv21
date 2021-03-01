@@ -9,7 +9,7 @@ var configs = {
   },
   /* ==== configurar envio de post a um link ==== */
   "send_post_php":{
-      "active":false,
+      "active":true,
       "post_url":{
         "link":"http://localhost/client_api/webhook.php",
         "autenticar":false,
@@ -22,6 +22,7 @@ var configs = {
     '--display-entrypoints',
     /* "--disable-gpu", 
     "--headless", */
+    "--disable-http-cache", /* desativar cache da sessão */
     "no-sandbox",
     '--no-sandbox', 
     '--disable-setuid-sandbox', /* até orignal */

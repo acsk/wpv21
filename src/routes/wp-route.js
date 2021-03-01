@@ -58,7 +58,7 @@ async function setup_instancia(instancia,session_rem){
           /* criar object instancia com status de aguardando qrcode (UNPAIRED) */
           instancias.push({'name':instancia,'qrcode':qrcode,'status':'UNPAIRED','instancia':undefined,'webhook':{}});
 
-          var path = "./" + instancia;
+          var path = "./tokens/" + instancia + ".data.json"; 
           var flag_dir = fs.existsSync(path);
           console.log("Pasta de sessão existe? " + flag_dir);
           if (flag_dir == true && session_rem == true) {   
@@ -211,7 +211,7 @@ async function setup_instancia(instancia,session_rem){
                            /* apos formatar o formato do retorno do arquivo (arquivo ou base64) então enviar post de notificação ao sistema client */
                           if(confApi.send_post_php.active == true){
 
-
+                          
                              if(item.webhook.type !== "chat"){
                               // console.log(message);
                                  /* =============== alterar conteudo de arquivo recebido (DIRETORIO, OU BASE64) ================ */

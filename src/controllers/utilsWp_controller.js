@@ -32,10 +32,12 @@ console.log("pegando mensagens do chat");
               for(var i = 0; i < chats.length; i++){
              
                 /* verificar id da message */
-                if(chats[i].id == requisicao.MsgId){
-                  //console.log(chat[i]);
-                  message = chats[i];
-                  break;
+                if(chats[i]){
+                  if(chats[i].id == requisicao.MsgId){
+                    //console.log(chat[i]);
+                    message = chats[i];
+                    break;
+                  }
                 }
     
            }

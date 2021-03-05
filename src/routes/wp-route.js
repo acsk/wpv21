@@ -4,6 +4,7 @@ const fs = require('fs');
 var mime = require('mime-types');
 var confApi = require('../../config/api');
 var utils = require('../controllers/utilsWp_controller');
+var wpCtr = require('../controllers/wp_controller');
 const ctrFile = require('../controllers/Files_controller');
 var request = require('request'); /* enviar post -> php */
 
@@ -29,7 +30,7 @@ var configs = {
   logQR: true, // Logs QR automatically in terminal
   browserArgs: confApi.browser, // Parameters to be added into the chrome browser instance
   refreshQR: 12000, // Will refresh QR every 15 seconds, 0 will load QR once. Default is 30 seconds
-  autoClose: 0, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
+  autoClose: false, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
   disableSpins: true, // Will disable Spinnies animation, useful for containers (docker) for a better log
   disableWelcome: true, // Will disable the welcoming message which appears in the beginning
 }
@@ -58,22 +59,13 @@ async function setup_instancia(instancia,session_rem){
           /* criar object instancia com status de aguardando qrcode (UNPAIRED) */
           instancias.push({'name':instancia,'qrcode':qrcode,'status':'UNPAIRED','instancia':undefined,'webhook':{}});
 
-          var path = "./tokens/" + instancia + ".data.json"; 
-          var flag_dir = fs.existsSync(path);
-          console.log("Pasta de sessão existe? " + flag_dir);
-          if (flag_dir == true && session_rem == true) {   
-            
-            try{
-                console.log("Removendo pasta de sessão...")
-                /* remover pasta do cache da instancia */
-                fs.rmdirSync(path, { recursive: true });
+          /* remover cache da sessao anterior */
+          if(session_rem == true){
 
-            }catch(err){
-                console.log("Erro ao tentar remover a pasta de sessão: " + err);
-            }
-            
+            await wpCtr.remove_caches(instancia);
 
           }
+
        
          // fs.rmdirSync(path, { recursive: true });
         // wapi_srv.defaultLogger.level = 'silly'; /* logs da api */
@@ -81,10 +73,9 @@ async function setup_instancia(instancia,session_rem){
            
          
               /* atualizar qrcode */
-              instancias.forEach(function(item){
+              instancias.forEach( async function(item){
                 /* VARRER O OBJECT DA INSTANCIA CRIADA E GRAVAR O QRCODE NA RESPECTIVA INSTANCIA */
-                if(item.name == instancia){   
-
+                if(item.name == instancia){  
                  
                  // console.log(configs);
                   /* verificar as configurações para API */
@@ -119,24 +110,24 @@ async function setup_instancia(instancia,session_rem){
               //Create session wss return "serverClose" case server for close
               console.log('- Session name: ', session_venom);
 
-              instancias.forEach( async function(item){
+              for(var i =0;i < instancias.length; i++){
 
-                    if(item.name == session_venom){
+                    if(instancias[i].name == session_venom){
 
-
+                      
                           if (statusSession == 'isLogged' || statusSession == 'inChat') {
-                              item.status = "CONNECTED";
+                            instancias[i].status = "CONNECTED";
                           } else if (statusSession == 'qrReadSuccess') {
-                              item.status = "CONNECTED";
+                            instancias[i].status = "CONNECTED";
                           } else if (statusSession == 'qrReadFail' || statusSession == 'notLogged') {
-                              item.status = "STARTING";
+                            instancias[i].status = "STARTING";
                           }else{
-                            item.status = statusSession;
+                            instancias[i].status = statusSession;
                           }
 
                     }
 
-              });
+              }/* fim do laço */
              
 
         },configs).then(async function(client){
@@ -187,13 +178,17 @@ async function setup_instancia(instancia,session_rem){
            /* ouvir mensagens (tempo real conforme recebe mensagens) */
          //  console.log(client.onMessage());
           client.onAnyMessage(message => {
-                           
+
+
+
+            if (message.fromMe == false){  /* não enviada pela sessão ativa */
+            
               /* gravar novas mensagens no hook da instancia */
               instancias.forEach( async function(item){
 
                   if(item.instancia == client){
                     
-                     console.log(message.sender);
+                     console.log(message);
                       
                       if(message){
                           /* nova mensagen */
@@ -222,13 +217,12 @@ async function setup_instancia(instancia,session_rem){
                       }
                       
                      
-                  }
-
-                  /* varrer mensaem recebida e salvar arquivo de download dentro da pasta public/files */
-
+                  } /* varrer mensaem recebida e salvar arquivo de download dentro da pasta public/files */
+                
     
               });
 
+            }
             //console.log(instancias);
             
                       

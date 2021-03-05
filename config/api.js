@@ -1,8 +1,7 @@
 'use strict' 
 /* link de referencia: https://github.com/open-wa/wa-automate-nodejs/issues/563#issuecomment-647030529 */
 
-var configs = {
- 
+var configs = {  
   "files": {
         "return_patch_files": true, /* ao retornar arquivos recebidos nas mensagens - retornar false=base64 ou true= diretorio local do arquivo  */
         "send_patch_files":true, /* no envio de arquivos para mensagens, false = base64 e true= url do arquivo (parâmetros de envio) */

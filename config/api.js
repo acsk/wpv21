@@ -6,6 +6,7 @@ var configs = {
   "files": {
         "return_patch_files": true, /* ao retornar arquivos recebidos nas mensagens - retornar false=base64 ou true= diretorio local do arquivo  */
         "send_patch_files":true, /* no envio de arquivos para mensagens, false = base64 e true= url do arquivo (parâmetros de envio) */
+        "decript_file_chat":false /* descriptografar arquivo do chat */
   },
   /* ==== configurar envio de post a um link ==== */
   "send_post_php":{

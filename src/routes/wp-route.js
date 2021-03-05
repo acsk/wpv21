@@ -76,12 +76,9 @@ async function setup_instancia(instancia,session_rem){
           }
        
          // fs.rmdirSync(path, { recursive: true });
+        // wapi_srv.defaultLogger.level = 'silly'; /* logs da api */
          wapi_srv.create(instancia, (base64Qr, asciiQR, attempts, urlCode) => {      
            
-
-            qrcode = base64Qr; //exportQR(base64Qr, '');            
-           
-           // console.log(qrcode);
          
               /* atualizar qrcode */
               instancias.forEach(function(item){
@@ -101,7 +98,7 @@ async function setup_instancia(instancia,session_rem){
                   }else{
 
                       /* atualizar o qrcode (base64) */
-                      item.qrcode = qrcode;
+                      item.qrcode = base64Qr;
 
                   }
                  
@@ -190,14 +187,13 @@ async function setup_instancia(instancia,session_rem){
            /* ouvir mensagens (tempo real conforme recebe mensagens) */
          //  console.log(client.onMessage());
           client.onAnyMessage(message => {
-              console.log(message.body);
-              
+                           
               /* gravar novas mensagens no hook da instancia */
               instancias.forEach( async function(item){
 
                   if(item.instancia == client){
                     
-                     console.log(' Mensagem: ' + message);
+                     console.log(message.sender);
                       
                       if(message){
                           /* nova mensagen */
@@ -209,40 +205,15 @@ async function setup_instancia(instancia,session_rem){
                          
 
                            /* apos formatar o formato do retorno do arquivo (arquivo ou base64) então enviar post de notificação ao sistema client */
-                          if(confApi.send_post_php.active == true){
-
-                          
-                             if(item.webhook.type !== "chat"){
-                              // console.log(message);
-                                 /* =============== alterar conteudo de arquivo recebido (DIRETORIO, OU BASE64) ================ */
-                                 /* verificar as configurações para API  PARA DOWNLOAD DE ARQUIVO RECEBIDO */  
-                                 var msgFormated = {};  
-                                                       
-                                    await utils.formatReceivedFile(client,message).catch( await function(res){
-     
-                                       msgFormated = res.retorno;
-     
-                                   });
-     
-                                   if(msgFormated){
-     
-                                     item.webhook = msgFormated;
-     
-                                   }else{
-     
-                                     item.webhook = message;
-     
-                                   }
-     
-     
-                               }
+                          if(confApi.send_post_php.active == true){                        
+                        
                             
                               console.log("✅ Enviando o post para o sistema cliente...");
                               
                                 /* enviar object new msg para sistema php via post */
                               await send_post({'instancia':item.name,'msg':message});
                               
-                              console.log("Nova Mensagem armazenada!" + message.body); 
+                            //  console.log("Nova Mensagem armazenada!" + message.body); 
                               /* após enviar o post marcar mensagens do remetente como lidas */
                               await client.sendSeen(message.from);
 
@@ -434,7 +405,6 @@ async function getQcodeIntance(instancia){
       });   
 
       return qrc;
-
 }
 
 /* retornar todos os contatos da instancia */
@@ -542,12 +512,14 @@ exports.FormatMessageFiles = async function(req,res){
                     /* verificar as configurações para API  PARA DOWNLOAD DE ARQUIVO RECEBIDO */  
                     var msgFormated = {};  
                       
-                      var retorno = await utils.formatReceivedFile(inst,requisicao).catch( await function(res){
-                          
-                          console.log("Resultado do retorno de processamento de arquivo do chat: ",res)
-                          return res.retorno;
+                    if(confApi.files.decript_file_chat == true){
+                        var retorno = await utils.formatReceivedFile(inst,requisicao).catch( await function(res){
+                            
+                            console.log("Resultado do retorno de processamento de arquivo do chat: ",res)
+                            return res.retorno;
 
-                      });
+                        });
+                    }
 
                       msgFormated = retorno;
                       //console.log(retorno);
@@ -1245,19 +1217,7 @@ exports.downloadFilesUser = async function(req,res){
                 console.log(err);
                 });
 
-                /* converter criado para mp3 */
-                //  var b64 = await fs.readFileSync(fileName,'base64');
-                /* mudar extenção na string dir do arquivo .ogg para .mp3 */
-                // var dirFinal = fileName.substr(0, fileName.lastIndexOf('.'));
-                //  var DirMp3 = dirFinal + '.mp3';
-                //  console.log(dirFinal);
-                /* criar arquivo .mp3 */
-                /*  await fs.writeFileSync(DirMp3, 'data:audio/mp3;base64,' + b64, function (err){
-                ret = err;
-                console.log(err);
-                }); */
-
-                /* se for documento */
+            
                 }
 
 
@@ -1414,7 +1374,8 @@ async function send_post(params){
         url: link,
         form: params
     }, function(error, response, body){
-      console.log(body)
+     // console.log(body)
+        console.log("➡️ post enviado para endpoint!");
     });
 
 }

@@ -29,7 +29,7 @@ app.use(express.static(dir));
 
 app.post('/wp/getAllContacts', wp.getAllContacts);
 app.post('/wp/get_Chat', wp.getChat);
-app.post('/wp/FormatMsgFiles', wp.FormatMessageFiles);
+app.post('/wp/FormatMsgFiles', wp.FormatMessageFiles); 
 app.post('/wp/get_AllMsgs', wp.get_AllMsgs);
 app.post('/wp/getProfilePic', wp.getProfilePic);
 app.post('/wp/getUnreadMsg', wp.getUnreadMsg);

@@ -188,7 +188,7 @@ async function setup_instancia(instancia,session_rem){
 
                   if(item.instancia == client){
                     
-                     console.log(message);
+                     //console.log(message);
                       
                       if(message){
                           /* nova mensagen */
@@ -814,6 +814,7 @@ exports.sendMsgMedia = async function(req,res){
               'instancia':consulta.nome,
               'sessao': inst,
               'number': chatId,
+              'fileName':requisicao.tipo,
               'arquivo': requisicao.arquivo,
               'msg': msg
             };

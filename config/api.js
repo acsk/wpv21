@@ -9,7 +9,7 @@ var configs = {
   },
   /* ==== configurar envio de post a um link ==== */
   "send_post_php":{
-      "active":true,
+      "active":false,
       "post_url":{
         "link":"http://localhost/client_api/webhook.php",
         "autenticar":false,

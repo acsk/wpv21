@@ -2,6 +2,8 @@
 /* converter url para base64 */
 const imageToBase64 = require('image-to-base64');
 const fs = require('fs');
+var Url = require('url');
+var Path = require('path');
 var getStat = require('util').promisify(fs.stat);
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffmpeg = require('fluent-ffmpeg');
@@ -22,11 +24,12 @@ exports.formatFilesSend = async function(params){
     */
 
     var fileName = "";
+    var dirFile = "";
     var now = new Date();    
     var bitmap;
     var image;
     var count = params.arquivo.length;
-    var ext = params.arquivo.substr(count -3,count);
+    var ext = "";
     var audio = false;
 
     var TypeFile = false;
@@ -40,28 +43,28 @@ exports.formatFilesSend = async function(params){
 
     }
     
-
-    /* pegar extenção do arquivo na url */
-    fileName = "FILE_"  + params.number.replace('@','').replace('.','') + "_" + now.getSeconds() + "." + ext;   
-    
-
-    var dirFile = './public/files/wapi/download/diversos/' + fileName;
     
    
     return new Promise( async (resolve, reject) => {
 
-        console.log("Tipo é arquivo? : " + TypeFile);
+       // console.log("Tipo é arquivo? : " + TypeFile);
         if (TypeFile == true){
 
                         /* verificar tipo de arquivo base64 ou via url */
                         if(confApi.files.send_patch_files == true){
+
+                                /* pegar extenção do arquivo na url */                               
+                                ext = Path.extname(Url.parse(params.arquivo).pathname).replace('.',''); /* pegar extenção da url do arquivo */
+                                fileName = "FILE_"  + params.number.replace('@','').replace('.','') + "_" + now.getSeconds() + "." + ext;
+                                dirFile = './public/files/wapi/download/diversos/' + fileName;
+
 
                                 if(ext == 'pdf' || ext == 'doc' || ext == 'docx' || ext == 'txt' || ext == 'rtf'){
                                     
 
                                             fileName = "DOCUMENTO_"+ params.number + "_" + now.getSeconds() + "." + ext;
                                             dirFile = './public/files/wapi/download/documento/' + fileName; 
-                                /* converter arquivo (url) em base64 */
+                                        /* converter arquivo (url) em base64 */
                                         await imageToBase64(params.arquivo) // Image URL
                                             .then(
                                                 (response) => {
@@ -120,7 +123,7 @@ exports.formatFilesSend = async function(params){
 
                                            /* pegar informações do arquivo se for menor igual a 2MB, enviar como gravação se não como arquivo .mp3 */
                                            var infoFile = await getStat(dirFile);
-                                            console.log(infoFile);
+                                            //console.log(infoFile);
                                             if(infoFile.size <= 2097152) /* menor igual 2MB */
                                             {
 
@@ -149,6 +152,15 @@ exports.formatFilesSend = async function(params){
 
                                 }/*  base64 ou url */
                                 else if(confApi.files.send_patch_files == false){ /* se for base64 */
+
+
+                                    /* pegar extenção do arquivo na url */                                    
+                                    var posI = params.fileName.indexOf(".");
+                                    var posF = params.fileName.length;
+                                    ext = params.fileName.substr(posI,posF);
+                                    fileName = "FILE_"  + params.number.replace('@','').replace('.','') + "_" + now.getSeconds() + "." + ext;
+                                    dirFile = './public/files/wapi/download/diversos/' + fileName;
+
                                     /* arqui será tratado qualquer arquivo para envio via base64 */
                                     bitmap = new Buffer(params.arquivo, 'base64');
                             
@@ -161,7 +173,7 @@ exports.formatFilesSend = async function(params){
                                 if(params.arquivo && params.number && params.msg){        
                                         
                                         result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
-                                        console.log("Enviando mensagem: " + result);                              
+                                       // console.log("Enviando mensagem: " + result);                              
                             
                                 }
                             

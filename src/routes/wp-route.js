@@ -85,11 +85,13 @@ async function setup_instancia(instancia,session_rem){
                       fileExportQR(base64Qr,dirDestFile);
 
                       item.qrcode = "files/wapi/qrcodes/" + item.name + ".png";
+                      item.status = "UNPAIRED";
 
                   }else{
 
                       /* atualizar o qrcode (base64) */
                       item.qrcode = base64Qr;
+                      item.status = "UNPAIRED";
 
                   }
                  
@@ -113,16 +115,26 @@ async function setup_instancia(instancia,session_rem){
               for(var i =0;i < instancias.length; i++){
 
                     if(instancias[i].name == session_venom){
-
+                     
                       
                           if (statusSession == 'isLogged' || statusSession == 'inChat') {
-                            instancias[i].status = "CONNECTED";
+
+                            instancias[i].qrcode = "syncronized";
+                            instancias[i].status = true;
+
                           } else if (statusSession == 'qrReadSuccess') {
-                            instancias[i].status = "CONNECTED";
+
+                            instancias[i].qrcode = "syncronized";
+                            instancias[i].status = true;
+
                           } else if (statusSession == 'qrReadFail' || statusSession == 'notLogged') {
-                            instancias[i].status = "STARTING";
+
+                            instancias[i].qrcode = "UNPAIRED";
+                            instancias[i].status = false;
+
                           }else{
-                            instancias[i].status = statusSession;
+                            //instancias[i].qrcode = statusSession;
+                            //instancias[i].status = "false";
                           }
 
                     }
@@ -140,6 +152,7 @@ async function setup_instancia(instancia,session_rem){
   
                 /* atualizar o qrcode */
                 item.qrcode = "syncronized";
+                item.status = true;
                 item.instancia = client;
                // client.close();
                
@@ -157,7 +170,7 @@ async function setup_instancia(instancia,session_rem){
            
             // console.log(state); /* status */
              status = state;
-
+            console.log("STATUS:", state)
 
              if(state == 'UNPAIRED'){
 
@@ -247,10 +260,10 @@ async function setup_instancia(instancia,session_rem){
     var retorno = {'flag_exist':false,'instancia':undefined};
 
       /* verificar se instancia solicitada já existe e retornar a mesma */      
-      instancias.forEach(function(item){ 
+      instancias.forEach( async function(item){ 
        
-        if(item.name == instancia){
-          console.log('✍️Verificando se existe a instancia: ' + item.name);
+        if(item.name == instancia){          
+          console.log('✍️Verificando se existe a instancia: ' + item.name);         
 
           retorno.flag_exist = true
           retorno.instancia = item.instancia; /* instancia criada no wapi */
@@ -278,6 +291,16 @@ async function setup_status_action(state,action,client){
                for(var i =0;i < instancias.length; i++){
                
                 if(instancias[i].instancia == client){
+
+                  if(state == "CONNECTED"){
+
+                    instancias[i].flag_exist = true;
+                    instancias[i].qrcode = 'syncronized';
+                    instancias[i].status = true;
+
+                  }
+
+               
                  
                   if (state == "UNPAIRED"){                   
 
@@ -289,12 +312,15 @@ async function setup_status_action(state,action,client){
                                 try{
                                   instancias[i].flag_exist = false;
                                   instancias[i].qrcode = 'despareado';
+                                  instancias[i].status = false;
+                                 
 
                                   process.on('SIGINT', function() {
                                     instancias[i].instancia.close();
                                   }) 
                                   console.log("❌ Usuário desconectou/removeu a sessão, despareando a instancia do cliente..." + instancias[i].name);
-                                  instancias.splice(i, 0);
+                                  await wpCtr.remove_caches(instancias[i].name);
+                                  instancias.splice(i, 0);                                  
                                   return;
                                   // instancias[i].instancia = undefined;
                                 }catch(err){
@@ -349,6 +375,8 @@ async function setup_status_action(state,action,client){
 
                                   instancias[i].flag_exist = false;
                                   instancias[i].qrcode = 'despareado';
+                                  instancias[i].status = false;
+                                  
 
                                   process.on('SIGINT', function() {
                                     instancias[i].instancia.close();
@@ -386,19 +414,19 @@ async function setup_status_action(state,action,client){
 }
 
 /* retornar o contido no object instancias */
-async function getQcodeIntance(instancia){
-      var qrc = "";
+async function getInfoIntance(instancia){
+      var session = "";
       instancias.forEach(function(item){
 
         if(item.name == instancia){
          
           /* atualizar o qrcode */         
-          qrc = item.qrcode;
+          session = item;
         }
 
       });   
 
-      return qrc;
+      return session;
 }
 
 /* retornar todos os contatos da instancia */
@@ -865,18 +893,16 @@ exports.getQrcode = async function(req,res){
       await setup_instancia(requisicao.instancia, requisicao.remover_cache);
 
       /* pegar qrcode da instancia criada */
-      qrcode = await getQcodeIntance(requisicao.instancia);
+      sessao = await getInfoIntance(requisicao.instancia);
 
-      /* pegar status */
-      status = "UNPAIRED";
-         
-      if(qrcode){
+       //  console.log("======================",sessao);
+      if(sessao !== undefined){
 
-        return res.status(200).json({'instancia':requisicao.instancia,'qrcode':qrcode, 'status':status});
+        return res.status(200).json({'instancia':requisicao.instancia,'qrcode':sessao.qrcode, 'status':sessao.status});
     
       }else{
 
-        return res.status(200).json({'instancia':requisicao.instancia,'qrcode':'wait...', 'status':status});
+        return res.status(200).json({'instancia':requisicao.instancia,'qrcode':'wait...', 'status':sessao.status});
 
       }
   
@@ -884,23 +910,27 @@ exports.getQrcode = async function(req,res){
   }else if(consulta.flag_exist == true){
 
      /* pegar qrcode da instancia criada */
-     qrcode = await getQcodeIntance(requisicao.instancia);
+     sessao = await getInfoIntance(requisicao.instancia);
      inst = consulta.instancia; /* pull de instancias */
     
      if(inst){
 
         // Is connected
-        status = await inst.isConnected();
+       // status = await inst.isConnected();
+       status = await inst.getConnectionState();/* VERIFICAR STATUS DA CONECÇÃO */
+       if(status == "CONNECTED"){
+        sessao.status = true;
+       }
         
-        console.log("Status consulta wp: " + status);
+        console.log("Status consulta wp: " + sessao.status);
 
      }
     
-     return res.status(200).json({'instancia':requisicao.instancia,'qrcode':qrcode, 'status':status});
+     return res.status(200).json({'instancia':requisicao.instancia,'qrcode':sessao.qrcode, 'status':sessao.status});
      
   }else{
 
-    return res.status(200).json({'instancia':requisicao.instancia,'qrcode':qrcode, 'status':status});
+    return res.status(200).json({'instancia':requisicao.instancia,'qrcode':qrcode, 'status':sessao.status});
 
   }
   

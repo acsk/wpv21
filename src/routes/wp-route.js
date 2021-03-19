@@ -1314,6 +1314,69 @@ exports.IspControllsMsg = async function(req, res){
 };
 
 
+/* integração SGP */
+exports.msgSgp = async function(req, res){
+  var requisicao = req.query;
+  var inst;
+  var consulta;  
+  var flagExec = false;
+  var instancia = "jmsoft";
+
+   /* verificar se instancia existe */
+   consulta = await verify_instance(instancia);
+
+   if(consulta.flag_exist == true && consulta.instancia !== undefined){
+
+      /* formatar numero (formato wp) */
+      requisicao.to = "55" + requisicao.to + "@c.us";
+
+      inst = consulta.instancia;
+
+      var retorno = await inst.sendText(requisicao.to, requisicao.msg);
+
+          /* se o envio falhar retirar o 9º dígito e tentar novamente */
+        if(retorno == false){
+
+          console.log(" ✍️ ==== Resolvendo, 9º dígito, e tentando novo envio...");
+          var texto = requisicao.to;
+          var numero = texto.slice(0, texto.length - 14);
+          numero += "" + texto.slice(5, texto.length);
+
+          /* atualizar o numero de envio (tirar o 9) */
+          requisicao.number = numero;
+                    /* só atualizar o numero de envio. (colocar null na mensagem caso contrário envia mensagem duas vezes.) */
+          retorno = await inst.sendText(requisicao.to, null);
+
+          var rs = "Ocorreu um erro.";
+          if(retorno){
+              rs = "Mensagem enviada com Sucesso!"
+          }
+
+          res.status(200).send({'retorno':rs});
+          return;
+
+      }else{
+
+          var rs = "Ocorreu um erro.";
+          if(retorno){
+              rs = "Mensagem enviada com Sucesso!"
+          }
+
+          res.status(200).send({'retorno':rs});
+          return;
+
+      }
+
+
+   }else{
+
+      res.status(200).send({'retorno':false});
+
+   }
+ 
+};
+
+
 
 /* notificações */
 exports.notificacoes = async function(){

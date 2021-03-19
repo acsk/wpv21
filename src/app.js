@@ -51,6 +51,9 @@ app.get('/',wp.front);
 /* funções de INTEGRAÇÕES - ISP controlls */
 app.get('/wp/IspMsg', wp.IspControllsMsg);
 
+/* integração SGP */
+app.get('/wp/msgSgp',wp.msgSgp);
+
 
 /* exportar -- poder usar em outro arquivo ou modulo */
 module.exports = app;

@@ -271,7 +271,7 @@ async function setup_instancia(instancia,session_rem){
       instancias.forEach( async function(item){ 
        
         if(item.name == instancia){          
-          console.log('✍️Verificando se existe a instancia: ' + item.name);         
+          console.log('✍️Verificando se existe a instancia: ' + item.name);          
 
           retorno.flag_exist = true
           retorno.instancia = item.instancia; /* instancia criada no wapi */
@@ -1091,14 +1091,15 @@ exports.logoff = async function(req,res){
       for(var i =0;i < instancias.length; i++){
        
         if(instancias[i].name == requisicao.instancia){
-          instancias.splice(i, 1);
-          
+          instancias.splice(i, 1);          
          // instancias[i].qrcode = "";
          // instancias[i].status = "removed";
           status = "DISCONECTED";     
         }
 
       }
+
+    
 
 
 
@@ -1114,35 +1115,36 @@ exports.logoff = async function(req,res){
 
         /* fechar/remover sessão  */
          /* remover o registro da instancia na global - instancias = [{}] */
-         for(var i =0;i < instancias.length; i++){
+         for(var i =0;i < instancias.length; i++){           
             
-              if(instancias[i].name == requisicao.instancia){
-                instancias.splice(i, 0); /* remover item (instancia) */
 
-                status = "DISCONECTED";
-                console.log("Entrou...");           
+              if(instancias[i].name == requisicao.instancia){               
                 
-              }
+                try {
 
-              try {
-
-                process.on('SIGINT', function() {
-                  console.log("❕Efetuando o close() na sessão!")
-                  inst.close();
-                });
-
-                           
-                console.log("➡️instância fechada (close)...");
-
-                
-              }catch (error) {
-                
-                console.log("erro ao destruir a sessão, continuando...");
-
-              }
-
-            
+                    var r = process.on('SIGINT', function() {
+                      console.log("❌ Fechando a sessão (close()).")
+                      inst.close();
+                    });
+                  
+                   // console.log(r);
     
+                    console.log("instância fechada (close)...");
+                  
+                }catch (error) {
+                  
+                    console.log("erro ao destruir a sessão, continuando...");
+  
+                }
+
+               
+                status = "DISCONECTED";
+                console.log("Entrou..."); 
+                console.log(instancias);
+                instancias.splice(i, 0); /* remover item (instancia) */
+                break;
+                
+              }
         }
 
         

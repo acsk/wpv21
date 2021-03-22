@@ -7,6 +7,9 @@ var configs = {
         "send_patch_files":true, /* no envio de arquivos para mensagens, false = base64 e true= url do arquivo (parâmetros de envio) */
         "decript_file_chat":false /* descriptografar arquivo do chat */
   },
+  "sessions": {
+       "autoClose" : 2 /* minutos */
+  },
   /* ==== configurar envio de post a um link ==== */
   "send_post_php":{
       "active":false,
@@ -97,5 +100,7 @@ var configs = {
     '--window-position=0,0'
   ]
 };
+
+configs.sessions.autoClose = (configs.sessions.autoClose) * 60000; /* converter minutos em milisegundos */
  
  module.exports = configs;

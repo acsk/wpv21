@@ -30,7 +30,7 @@ var configs = {
   logQR: true, // Logs QR automatically in terminal
   browserArgs: confApi.browser, // Parameters to be added into the chrome browser instance
   refreshQR: 12000, // Will refresh QR every 15 seconds, 0 will load QR once. Default is 30 seconds
-  autoClose: false, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
+  autoClose: 10000, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
   disableSpins: true, // Will disable Spinnies animation, useful for containers (docker) for a better log
   disableWelcome: true, // Will disable the welcoming message which appears in the beginning
 }
@@ -103,18 +103,18 @@ async function setup_instancia(instancia,session_rem){
             
 
          
-        }, (statusSession, session_venom) => {
+        }, (statusSession, session_name) => {
 
           /* TRATAR STATUS DA SESSÕES */
 
               console.log('- Status da sessão:', statusSession);
               //return isLogged || notLogged || browserClose || qrReadSuccess || qrReadFail || autocloseCalled || desconnectedMobile || deleteToken
               //Create session wss return "serverClose" case server for close
-              console.log('- Session name: ', session_venom);
+              console.log('- Session name: ', session_name);
 
               for(var i =0;i < instancias.length; i++){
 
-                    if(instancias[i].name == session_venom){
+                    if(instancias[i].name == session_name){
                      
                       
                           if (statusSession == 'isLogged' || statusSession == 'inChat') {
@@ -132,7 +132,15 @@ async function setup_instancia(instancia,session_rem){
                             instancias[i].qrcode = "UNPAIRED";
                             instancias[i].status = false;
 
-                          }else{
+                          }else if(statusSession == 'autocloseCalled'){
+                              console.log("❌Sessão autocancelada, removendo sessão.")                           
+       
+                              if(instancias[i].name == session_name){
+                                instancias.splice(i, 1);
+                                console.log("✅Sessão removida com sucesso.")
+                                break;                                                                  
+                              }
+                      
                             //instancias[i].qrcode = statusSession;
                             //instancias[i].status = "false";
                           }
@@ -1071,7 +1079,7 @@ exports.logoff = async function(req,res){
   
   var requisicao = req.body;
 
-  var consulta = await verify_instance(requisicao.instancia);
+  var consulta_ = await verify_instance(requisicao.instancia);
   var status = "Inexistente";
 
   /* verificar se instancia foi informada */
@@ -1094,9 +1102,9 @@ exports.logoff = async function(req,res){
 
 
 
-  if(consulta.flag_exist == true){
+  if(consulta_.flag_exist == true){
 
-    var inst = consulta.instancia;
+    var inst = consulta_.instancia;
     
     if(inst){
 
@@ -1107,7 +1115,7 @@ exports.logoff = async function(req,res){
         /* fechar/remover sessão  */
          /* remover o registro da instancia na global - instancias = [{}] */
          for(var i =0;i < instancias.length; i++){
-
+            
               if(instancias[i].name == requisicao.instancia){
                 instancias.splice(i, 0); /* remover item (instancia) */
 
@@ -1119,10 +1127,13 @@ exports.logoff = async function(req,res){
               try {
 
                 process.on('SIGINT', function() {
+                  console.log("❕Efetuando o close() na sessão!")
                   inst.close();
                 });
 
-                console.log("instância fechada (close)...");
+                           
+                console.log("➡️instância fechada (close)...");
+
                 
               }catch (error) {
                 

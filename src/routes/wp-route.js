@@ -200,7 +200,10 @@ async function setup_instancia(instancia,session_rem){
          //  console.log(client.onMessage());
           client.onAnyMessage(message => {
 
-
+            /* identificar se é registro de atualização de status (do whatsapp) */
+            if (message.broadcast){
+              return; /* não fazer nada */
+            } 
 
             if (message.fromMe == false){  /* não enviada pela sessão ativa */
             
@@ -1126,6 +1129,8 @@ exports.logoff = async function(req,res){
                       console.log("❌ Fechando a sessão (close()).")
                       inst.close();
                     });
+
+                    
                   
                    // console.log(r);
     
@@ -1140,7 +1145,7 @@ exports.logoff = async function(req,res){
                
                 status = "DISCONECTED";
                 console.log("Entrou..."); 
-                console.log(instancias);
+                
                 instancias.splice(i, 0); /* remover item (instancia) */
                 break;
                 

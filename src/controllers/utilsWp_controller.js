@@ -55,7 +55,21 @@ console.log("pegando mensagens do chat");
           return {"retorno":"erro conversasão não identificada!"};
         }
  
-        var buffer = await instancia.decryptFile(message);       
+
+        var buffer;
+        /* tratar decript do arquivo caso der erro (ANDRE - 22-03-2021) */
+        try{
+
+           buffer = await instancia.decryptFile(message); 
+
+        }catch(error){
+
+          reject({"erro":"Ocorreu um erro ao descriptografar o arquivo.",retorno:message});
+          return;
+
+        }
+
+              
         console.log("Extenção do arquivo a ser tratado: ",ext);
         //console.log("Base64 do arquivo:",buffer);
                 /* =============== alterar conteudo de arquivo recebido (DIRETORIO, OU BASE64) ================ */

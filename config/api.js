@@ -1,9 +1,9 @@
-'use strict' 
+'use s/trict' 
 /* link de referencia: https://github.com/open-wa/wa-automate-nodejs/issues/563#issuecomment-647030529 */
 
 var configs = {  
   "files": {
-        "return_patch_files": true, /* ao retornar arquivos recebidos nas mensagens - retornar false=base64 ou true= diretorio local do arquivo  */
+        "return_patch_files": false, /* ao retornar arquivos recebidos nas mensagens - retornar false=base64 ou true= diretorio local do arquivo  */
         "send_patch_files":true, /* no envio de arquivos para mensagens, false = base64 e true= url do arquivo (parâmetros de envio) */
         "decript_file_chat":false /* descriptografar arquivo do chat */
   },
@@ -12,9 +12,9 @@ var configs = {
   },
   /* ==== configurar envio de post a um link ==== */
   "send_post_php":{
-      "active":false,
+      "active":true,
       "post_url":{
-        "link":"http://localhost/client_api/webhook.php",
+        "link":"http://luz.kroqui.com.br/api/receive",
         "autenticar":false,
         "user":"",
         "passwd":""

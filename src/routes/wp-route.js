@@ -7,7 +7,7 @@ var utils = require('../controllers/utilsWp_controller');
 var wpCtr = require('../controllers/wp_controller');
 const ctrFile = require('../controllers/Files_controller');
 var request = require('request'); /* enviar post -> php */
-
+var extend = require('extend'); /* extender objects */
 
 
 const { response } = require('../app');
@@ -22,6 +22,7 @@ var notificacoes = [];
 /* config timeout in line: 76 arquive: wapi_srv20\node_modules\wapi_srv\dist\controllers\browser.js */
 /* configs venom */
 var configs = {
+  session: "",
   folderNameToken: "tokens", //folder name when saving tokens
   headless: true, // Headless chrome
   devtools: false, // Open devtools by default
@@ -30,9 +31,19 @@ var configs = {
   logQR: true, // Logs QR automatically in terminal
   browserArgs: confApi.browser, // Parameters to be added into the chrome browser instance
   refreshQR: 12000, // Will refresh QR every 15 seconds, 0 will load QR once. Default is 30 seconds
-  autoClose: confApi.sessions.autoClose, // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
-  disableSpins: true, // Will disable Spinnies animation, useful for containers (docker) for a better log
+  autoClose: 1 * (1000*60), // Will auto close automatically if not synced, 'false' won't auto close. Default is 60 seconds (#Important!!! Will automatically set 'refreshQR' to 1000#)
+  disableSpins: false, // Will disable Spinnies animation, useful for containers (docker) for a better log
   disableWelcome: true, // Will disable the welcoming message which appears in the beginning
+  updatesLog:false,
+  createPathFileToken:true,
+  waitForLogin:true,
+  /* update edgard - 23-08-2021 */
+  //logger: defaultLogger,
+  tokenStore: 'file',
+  puppeteerOptions: {
+      userDataDir: '' 
+  },
+  whatsappVersion: undefined,
 }
 
 /* função instancias */
@@ -67,15 +78,26 @@ async function setup_instancia(instancia,session_rem){
           }
 
        
+          /* formatar e construir a instancia */
+          var setIntance = {};
+          configs.session = instancia;
+          configs.puppeteerOptions.userDataDir = 'tokens/' + instancia;       
+          extend(setIntance,configs);
+
          // fs.rmdirSync(path, { recursive: true });
         // wapi_srv.defaultLogger.level = 'silly'; /* logs da api */
-         wapi_srv.create(instancia, (base64Qr, asciiQR, attempts, urlCode) => {      
+         wapi_srv.create(setIntance, (base64Qr, asciiQR, attempts, urlCode) => {      
            
          
               /* atualizar qrcode */
               instancias.forEach( async function(item){
                 /* VARRER O OBJECT DA INSTANCIA CRIADA E GRAVAR O QRCODE NA RESPECTIVA INSTANCIA */
-                if(item.name == instancia){  
+                if(item.name == instancia){ 
+                  
+                  if(item.instancia){
+                    console.log("⛔ A instância já existe, abortando qrcode: ", item.name);
+                    return true;
+                  }
                  
                  // console.log(configs);
                   /* verificar as configurações para API */
@@ -127,22 +149,33 @@ async function setup_instancia(instancia,session_rem){
                             instancias[i].qrcode = "syncronized";
                             instancias[i].status = true;
 
-                          } else if (statusSession == 'qrReadFail' || statusSession == 'notLogged') {
-
-                            instancias[i].qrcode = "UNPAIRED";
-                            instancias[i].status = false;
+                          }else if (statusSession == 'qrReadFail' || statusSession == 'browserClose' || statusSession == 'notLogged'|| statusSession == 'qrReadError') {
+                           
+                            if(instancias[i].name == session_name && !instancias[i].instancia){
+                              console.log("❌Sessão desconectada: " + statusSession);
+                              instancias[i].qrcode = statusSession;
+                              instancias[i].status = "DISCONECTED";
+                            }
 
                           }else if(statusSession == 'autocloseCalled'){
                               console.log("❌Sessão autocancelada, removendo sessão.")                           
        
-                              if(instancias[i].name == session_name){
-                                instancias.splice(i, 1);
-                                console.log("✅Sessão removida com sucesso.")
-                                break;                                                                  
+                              if(instancias[i].name == session_name && !instancias[i].instancia){
+                                if(instancias[i].name == session_name){
+                                  instancias.splice(i, 1);
+                                  console.log("✅Sessão removida com sucesso.");
+                                  break;                                                                  
+                                }
                               }
                       
                             //instancias[i].qrcode = statusSession;
                             //instancias[i].status = "false";
+                          }else if(statusSession == 'desconnectedMobile' || statusSession == 'TIMEOUT'){
+
+                            /* se desconectar através do aparelho remover o arquivo do cache da sessão. */
+                           // await setup_status_action(statusSession,'destroy',instancias[i].intancia);
+                           console.log("❌❕ Dados da Instancia Desconectada no Celular: ------------->",instancias[i].intancia)
+
                           }
 
                     }
@@ -150,7 +183,7 @@ async function setup_instancia(instancia,session_rem){
               }/* fim do laço */
              
 
-        },configs).then(async function(client){
+        }).then(async function(client){
 
 
             /* gravar a instancia na variavel global após qrcode Sincronizado */
@@ -195,6 +228,13 @@ async function setup_instancia(instancia,session_rem){
  
              
            });
+
+            /* estado atual da conexão */
+          client.onStreamChange( async (stateconn) => {
+
+              console.log("onStreamChange = status atual da conexão: ", stateconn);
+
+          });
 
            /* ouvir mensagens (tempo real conforme recebe mensagens) */
          //  console.log(client.onMessage());
@@ -858,7 +898,7 @@ exports.sendMsgMedia = async function(req,res){
               'msg': msg
             };
 
-           
+           try{
 
             result = await ctrFile.formatFilesSend(pars).then( async function(rs){
                        
@@ -869,6 +909,11 @@ exports.sendMsgMedia = async function(req,res){
                         return erro;
                         
                     });
+	}catch(error){
+
+		res.status(200).send({'instancia':requisicao.instancia,'status':status,'retorno':"Erro ao executar a operação",'info':error.toString()});
+
+	}
 
 
         }
@@ -1093,14 +1138,21 @@ exports.logoff = async function(req,res){
   
       for(var i =0;i < instancias.length; i++){
        
-        if(instancias[i].name == requisicao.instancia){
+        if(instancias[i].name == requisicao.instancia && instancias[i].instancia == undefined){
           instancias.splice(i, 1);          
-         // instancias[i].qrcode = "";
-         // instancias[i].status = "removed";
-          status = "DISCONECTED";     
+          
+          status = "DISCONECTED";
+          console.log("========> sessao gobal removida!")
+        
+          if(requisicao.remover_cache == true){
+
+            console.log("❌❕ Dados da Instancia Travada: ------------->",requisicao.instancia)
+            await wpCtr.remove_caches(requisicao.instancia);
+
+          }
         }
 
-      }
+      } 
 
     
 
@@ -1124,23 +1176,46 @@ exports.logoff = async function(req,res){
               if(instancias[i].name == requisicao.instancia){               
                 
                 try {
+                  
+                  //await inst.logout(); fecha, remove cache, e reinicia geração qrcode
+                 // await client.killServiceWorker();
+                  console.log("==============>Removendo sessao com close...")
+                  
+                /* remover pasta arquivo de cache da sessao */
+                if(requisicao.remover_cache == true){
 
-                    var r = process.on('SIGINT', function() {
-                      console.log("❌ Fechando a sessão (close()).")
-                      inst.close();
-                    });
+                  await inst.logout();
+                  await inst.killServiceWorker();                 
 
-                    
-                  
-                   // console.log(r);
-    
-                    console.log("instância fechada (close)...");
-                  
-                }catch (error) {
-                  
-                    console.log("erro ao destruir a sessão, continuando...");
-  
                 }
+
+                  
+                  await inst.close().then( async function(res){
+
+                    console.log("instância fechada (close)..." + res);
+
+                    instancias.splice(i, 1);          
+       
+                    status = "DISCONECTED";
+
+                    /* remover pasta arquivo de cache da sessao */
+                      if(requisicao.remover_cache == true){
+                          
+                        await wpCtr.remove_caches(requisicao.instancia);
+                        
+                      }
+
+                  });
+
+
+  
+                 
+                
+              }catch (error) {
+                
+                  console.log("erro ao destruir a sessão, continuando...");
+                  return;
+              }
 
                
                 status = "DISCONECTED";

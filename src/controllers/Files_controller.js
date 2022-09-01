@@ -124,15 +124,19 @@ exports.formatFilesSend = async function(params){
                                            /* pegar informações do arquivo se for menor igual a 2MB, enviar como gravação se não como arquivo .mp3 */
                                            var infoFile = await getStat(dirFile);
                                             //console.log(infoFile);
-                                            if(infoFile.size <= 2097152) /* menor igual 2MB */
-                                            {
+                                            try{
+                                                if(infoFile.size <= 2097152) /* menor igual 2MB */
+                                                {
 
-                                                result = await params.sessao.sendPtt(params.number,dirFile, fileName, params.msg); 
+                                                    result = await params.sessao.sendPtt(params.number,dirFile, fileName, params.msg); 
 
-                                            }else{
+                                                }else{
 
-                                                result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
+                                                    result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
 
+                                                }
+                                            }catch(error){
+                                                result = error.toString();
                                             }
 
                                             
@@ -172,7 +176,12 @@ exports.formatFilesSend = async function(params){
                             
                                 if(params.arquivo && params.number && params.msg){        
                                         
+                                       try{
                                         result = await params.sessao.sendFile(params.number,dirFile, fileName, params.msg); 
+                                       // console.log("Enviando mensagem: " + result);                              
+                                    }catch(error){
+                                        result = "Ocorreu um erro na tentativa de envio, favor verifique os parametros enviados.";
+                                    }
                                        // console.log("Enviando mensagem: " + result);                              
                             
                                 }
